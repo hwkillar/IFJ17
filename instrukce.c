@@ -72,7 +72,7 @@ void instrukce(TA_Item **ta_table, tBTSUzolPtr root)
         ta_Get(ta_table, &operation, &op1, &op2, &result, position);
         switch(operation)
         {
-            /******************aritmeticke operace**********************/ // OPERACE NA ZAKLADENI VYRAZY.C
+            /******************aritmeticke operace**********************/ // OPERACE NA ZAKLADE VYRAZY.C
         case I_ADD:
             if(result == NULL)
             {
