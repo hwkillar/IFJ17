@@ -856,14 +856,20 @@ void instrukce(TA_Item **ta_table, tBTSUzolPtr root)
             }
             else if (op1->data.typ == tString) // neni vporadku domyslet !!!!!
             {
-                int znak = 0;
-                char *str;
-                int i = 0;
-                if ((znak = getchar()) == 10)
+                int id;
+                if (op1 == NULL)
                 {
-                    int id = '!';
+                    id = '!';
+                    char *str = id;
+                    result->data.value.s = str;
+                    result->data.typ = tString;
                     break;
                 }
+
+                int praz = 0;
+                int znak = 0;
+                char str[100];
+                int i = 0;
                 while (1)
                {
                     znak = getchar();
@@ -871,11 +877,18 @@ void instrukce(TA_Item **ta_table, tBTSUzolPtr root)
                     {
                         break;
                     }
-                    str[i] = znak;
-                    i++;
+                    else if (znak == '"')
+                        ;
+                    else
+                    {
+                        str[i] = znak;
+                        i++;
+                    }
                }
-                int id = str;
+                str[i+1] = '\0';
+                 id = str;
                result->data.value.s = str;
+               result->data.typ = tString;
                break;
             }
             else
