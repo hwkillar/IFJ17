@@ -1,5 +1,5 @@
 
- * Hlavickove soubory
+ /* Hlavickove soubory
  */
 #include "vyrazy.h"
 #include "garbage_collector.h"
@@ -129,11 +129,11 @@ tError fetchIndex(tToken token, tData *sloupec, int *counter)
         sloupec->p = DELENO_D;
         break;				// /
     case DELENO_CELY:
-        sloupec->p = DELENO_C
-        break:              // \
-   /* case EXP:
+        sloupec->p = DELENO_C;
+        break;              // \ A
+    case EXP:
         sloupec->p = MOCNINA;
-        break;*/			// ^
+        break;			// ^
     case JE_ROVNO:
         sloupec->p = ROVNITKO;
         break;			//=
@@ -224,21 +224,6 @@ tError fetchIndex(tToken token, tData *sloupec, int *counter)
         break;
         //klicove slovo znaci bud NULL nebo BOOL nebo konec
     case KLIC_SLOVO:
-        //narazili jsme na NULL
-        if(!(strcmp(token.data, "nil")))
-            sloupec->p = ID;
-        sloupec->data.varFc = false;
-        sloupec->data.typ = tNil;
-        char *n = advMalloc(sizeof(char)*25);
-        sprintf(n,"@prom_%u",nameID++);
-        sloupec->data.nazov = n;
-        if((TSreadSymbol(n)) != NULL)  //pokud uz jmeno bylo v tabulce
-        {
-            fprintf(stderr,"4nemuzeme vlozit, stejna promenna\n");
-            return ESEM;
-        }
-        TSvlozSymbol(sloupec->data);
-
         //narazili jsme na boolean
         if(!(strcmp(token.data, "false")) || !(strcmp(token.data, "true")))
         {
@@ -291,7 +276,7 @@ tError redukce(tVZasobnik *zasobnik, tVZasobnik *zasobnik2 )
     TSinitSymbol(&pom3.data);
     TSinitSymbol(&pom4.data);
 
-    int arit = 0;	//pomocna promenna pro rozliseni konkatenace a scitani
+    int konkat = 0;	//pomocna promenna pro rozliseni konkatenace a scitani
     int ok;			//spravny operator
     size_t perator;	//promenna pro ulozeni operatoru
 
@@ -387,18 +372,17 @@ tError redukce(tVZasobnik *zasobnik, tVZasobnik *zasobnik2 )
                 perator = I_MUL;
                 ok = 1;
                 break;
-            case DELENO:
-                perator = I_DIV;
+            case DELENO_CELY:
+                perator = I_DIVC;
                 ok = 1;
                 break;
-            case MOCNINA:
+            case DELENO_DESET:
+                perator = I_DIVD;
+                ok = 1;
+                break;
+            /*case MOCNINA:
                 perator = I_POW;
                 ok = 1;
-                break;
-           /* case KONKAT:
-                perator = I_ADD;
-                ok = 1;
-                konkat = 1;
                 break;*/
             case ROVNITKO:
                 perator = I_EQUAL;
@@ -445,9 +429,10 @@ tError redukce(tVZasobnik *zasobnik, tVZasobnik *zasobnik2 )
                 VSpop(zasobnik);	//odstranime < ze zasobniku
 
                 if((perator == I_ADD) ||	//semant. kontrola aritmetickych operaci
-                        (perator == I_SUB) ||
-                        (perator == I_MUL) ||
-                        (perator == I_DIV) ||
+                        (perator == I_SUB)  ||
+                        (perator == I_MUL)  ||
+                        (perator == I_DIVD) ||
+                        (perator == I_DIVC) ||
                         (perator == I_POW))
                 {
                     //pokud nemame konkatenaci
@@ -546,7 +531,7 @@ tError pparser()
         {
             if((fetchok = fetchIndex(token,&sloupec,&counter)) == EOK)   //pomocna promenna pro ziskani praveho indexu tabulky
             {
-                if(vst == SORT || vst == TYPE || vst == FIND || vst == SUBSTR || vst == FUNC)
+                if(vst == Asc || vst == Chr || vst == Length || vst == SUBSTR || vst == FUNC)
                 {
 
                     vst = NOVEST;

@@ -1,5 +1,20 @@
 
-#define EOL "\n"
+
+#include <ctype.h>
+#include <math.h>
+#include "funkce.h"
+#include "garbage_collector.h"
+#include "syntakticky_analyzator.h"
+#include "lexikalni_analyzator.h"
+#include "vyrazy.h"
+#include "tagenerator.h"
+#include "instrukce.h"
+
+#define ASC_PARAMS 1
+#define CHR_PARAMS 2
+#define LENGTH_PARAMS 1
+#define SUBSTR_PARAMS 3
+
 tSymbol name;
 tData neterm;
 tData fce;
@@ -40,7 +55,7 @@ tError parser()
     pole_back=(int*)advMalloc(sizeof(int)*ALL_MORE);
     error = EOK;
     tToken token = getToken();
-    if(token.stav == S_ENDOFFILE) //pokud je soubor prazdny, chyba
+    if(token.stav == ENDOFFILE) //pokud je soubor prazdny, chyba
         error = ESYN;
     else error = program(); //pokracuj v analyze
 
@@ -77,7 +92,7 @@ tError program()
             error = ESEM;
     }
 
-    if(token.stav != S_ENDOFFILE) //kod musi konci EOF
+    if(token.stav != ENDOFFILE) //kod musi konci EOF
         error = ESYN;
 
 
@@ -97,7 +112,7 @@ tError funkce()
 
     if(token.stav != KLIC_SLOVO) //pokud nedostanu klicove slovo
         return  ESYN;
-    if (!(strcmp(token.data), "declare")) // simple function
+    if (!(strcmp(token.data, "declare"))) // simple function
     {
         getToken();
         if ((strcmp(token.data, "function"))) // kontrola "declare" "function" ID "(" <params> ")" "as" <navratovy_typ> simple function
@@ -135,7 +150,7 @@ tError funkce()
             return ESYN;
         }
         else {
-            stav = params(); //<params>
+            error = params(); //<params>
         }
             if(error != EOK)
         {
@@ -167,11 +182,11 @@ tError funkce()
             }
             if(token.stav != KLIC_SLOVO)
                 return ESYN;
-            if (((strcmp(token.data, "integer")) && ((strcmp(token.data, "double"))) && ((strcmp(token.data, "string"))))// test navratove hodnoty
+            if (((strcmp(token.data, "integer")) && ((strcmp(token.data, "double"))) && ((strcmp(token.data, "string")))))// test navratove hodnoty
                 return ESYN;
              else {
                 ta_Insert(&ta,I_GOTO,NULL,NULL,NULL);
-                Error = funkce();
+                error = funkce();
              }
         }
         else
@@ -289,7 +304,7 @@ tError funkce()
             return ESYN;
         }
         else {
-            stav = params(); //<params>
+            error = params(); //<params>
         }
             if(error != EOK)
         {
@@ -371,7 +386,7 @@ tError funkce()
 
         if(token.stav == KLIC_SLOVO) //pokud nedostanu klicove slovo
             if(!(strcmp(token.data, "function"))) //"scope"
-                Error = funkce(); //jdu zpracovat dalsi funkci
+                error = funkce(); //jdu zpracovat dalsi funkci
     }
     return error;
 }
@@ -426,7 +441,7 @@ tError list()
     if(!(strcmp(token.data, "else")))//list je na konci "then" u "IF"
         {
           getToken();
-          if ((strcmp(token.data, EOL))) // musi nasledovat eol
+          if (token.stav != EOL) // musi nasledovat eol
           {
               return error;
           }
@@ -558,7 +573,7 @@ tError list()
             if((strcmp(token.data, "else")))
                 return ESYN;
             getToken();
-            if(token.stav  != EOL)))
+            if(token.stav  != EOL)
                 return ESYN;
             getToken(); //Nacti neco do listu
             if(error != EOK)
@@ -586,19 +601,19 @@ tError list()
         }
         else if(!(strcmp(token.data, "dowhile"))) //<list>	->  "dowhile" <expr> "eol" <list> "loop" "eol" <list>
         {
-            int dowhile_label=(label);
-            int dowhile_end_label=++(label);
+            int dowhile_label = (label);
+            int dowhile_end_label = ++(label);
             label++;
 
             getToken(); //EXPR
             if(error != EOK)
                 return error;
 
-            ta_InsertJump(&ta,I_LABEL,NULL, while_label);
+            ta_InsertJump(&ta, I_LABEL, NULL, dowhile_label);
 
             error = pparser();//////////////////////////////////
 
-            ta_InsertJump(&ta,I_FJUMP,TSreadSymbol(neterm.data.nazov),while_end_label);
+            ta_InsertJump(&ta, I_FJUMP, TSreadSymbol(neterm.data.nazov), dowhile_end_label);
 
             if(error != EOK)
                 return error;
@@ -606,7 +621,7 @@ tError list()
             if(error != EOK)
                 return error;
 
-            if((strcmp(token.data, EOL)))// eol
+            if(token.stav != EOL)// eol
                 return ESYN;
 
             getToken(); //Nacti neco do listu
@@ -617,14 +632,14 @@ tError list()
             if(error != EOK)
                 return error;
 
-            ta_InsertJump(&ta,I_JUMP,TSreadSymbol(neterm.data.nazov),while_label);
+            ta_InsertJump(&ta, I_JUMP, TSreadSymbol(neterm.data.nazov), dowhile_label);
 
             if((strcmp(token.data, "loop"))) //"end"
                 {
                     fprintf(stderr, "Ocekavan : \"loop\n");
                     return ESYN;
                 }
-            ta_InsertJump(&ta,I_LABEL,NULL, while_end_label);
+            ta_InsertJump(&ta, I_LABEL,NULL, dowhile_end_label);
 
            /* getToken(); //"eol"
             if(error != EOK)
@@ -687,14 +702,11 @@ tError list()
 /**
  * <print>		->	"(" <expr> ")" "\n"
  */
-tError print)
+tError print()
 {
     getToken();
     if(error != EOK)
         return error;
-
-    if(token.stav != LEVA_ZAVORKA) //musi byt "("
-        return ESYN;
 
     isPrint = true; //zapamatuji si, ze jsem ve funkci print
 
@@ -707,7 +719,7 @@ tError print)
     if(error != EOK)
         return error;
 
-    if(token.stav != EOL) //musi byt "\n"
+    if(token.stav != STREDNIK) //musi byt "\n"
         return ESYN;
 
 
@@ -761,7 +773,7 @@ tError Input()
         }
         else TSvlozSymbol(dataStromu); //jinak vloz do tabulky
 
-        ta_Insert(&ta, I_READ, TSreadSymbol(nazev),NULL, cilovaAdresa);
+        ta_Insert(&ta, I_INPUT, TSreadSymbol(nazev),NULL, cilovaAdresa);
 
         getToken();
         if(error != EOK)
@@ -842,7 +854,7 @@ tError vest()
         if(error != EOK)
             return error;
 
-        ta_Insert(&ta, I_CHR ,pole_argumentu[0], NULL, cilovaAdresa);
+        ta_Insert(&ta, I_Asc ,pole_argumentu[0], NULL, cilovaAdresa);
         if(isExprWr)
             neterm.data=cilovaAdresa->data;
         break;
@@ -854,7 +866,7 @@ tError vest()
         if(error != EOK)
             return error;
 
-        ta_Insert(&ta, I_LENGTH , pole_argumentu[0], NULL, cilovaAdresa);
+        ta_Insert(&ta, I_Length , pole_argumentu[0], NULL, cilovaAdresa);
         if(isExprWr)
             neterm.data=cilovaAdresa->data;
         break;
@@ -989,7 +1001,7 @@ tError varDeclar()
             if (token.stav != PRIRAZENI)
             {
                 cilovaAdresa = tmpNode;
-                ta_Insert(&ta, I_ASSIGN, tmpNode, 0.0, cilovaAdresa);
+                ta_Insert(&ta, I_ASSIGN, tmpNode, 0, cilovaAdresa);
                 return error;
             }
             else// kdyz token je =
@@ -1005,7 +1017,7 @@ tError varDeclar()
             if (token.stav != PRIRAZENI)
             {
                 cilovaAdresa = tmpNode;
-                ta_Insert(&ta, I_ASSIGN, tmpNode, !"", cilovaAdresa);
+                ta_Insert(&ta, I_ASSIGN, tmpNode, '!', cilovaAdresa);
                 return error;
             }
             else// kdyz token je =
@@ -1198,7 +1210,7 @@ tError args()
                 if(error != EOK)
                     return error;
 
-                ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+                ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
             }
             else
             {
@@ -1223,7 +1235,7 @@ tError args()
                 tBTSUzolPtr tmpCil = cilovaAdresa;
                 cilovaAdresa = TSreadSymbol(nazev);
                 error = litExpr();
-                ta_Insert(&ta, I_WRITE, cilovaAdresa,NULL, NULL);
+                ta_Insert(&ta, I_PRINT, cilovaAdresa,NULL, NULL);
                 if(error != EOK)
                     return error;
 
@@ -1269,7 +1281,7 @@ tError args()
             if(error != EOK)
                 return error;
 
-            ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+            ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
         }
 
         else //jinak se jedna o argumenty funkci, ktere nejsou vyrazy
@@ -1291,7 +1303,7 @@ tError args()
 
             else TSvlozSymbol(dataStromu); //jinak vloz do tabulky
 
-            if(isType || isFind || isSubs || isSort)
+            if(isAsc || isChr || isSubs || isLength)
             {
                 pole_argumentu[0]=TSreadSymbol(nazev);
             }
@@ -1312,7 +1324,7 @@ tError args()
             if(error != EOK)
                 return error;
 
-            ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+            ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
         }
         else //jinak se jedna o argumenty funkci, ktere nejsou vyrazy
         {
@@ -1353,7 +1365,7 @@ tError args()
             if(error != EOK)
                 return error;
 
-            ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+            ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
         }
         else //jinak se jedna o argumenty funkci, ktere nejsou vyrazy
         {
@@ -1393,7 +1405,7 @@ tError args()
             if(error != EOK)
                 return error;
 
-            ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+            ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
         }
         else //jinak se jedna o argumenty funkci, ktere nejsou vyrazy
         {
@@ -1435,7 +1447,7 @@ tError args()
                 if(error != EOK)
                     return error;
 
-                ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+                ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
             }
             else //jinak se jedna o argumenty funkci, ktere nejsou vyrazy
             {
@@ -1522,7 +1534,7 @@ tError args()
             if(error != EOK)
                 return error;
 
-            ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+            ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
         }
         else //jinak se jedna o argumenty funkci, ktere nejsou vyrazy
         {
@@ -1563,7 +1575,7 @@ tError args()
             if(error != EOK)
                 return error;
 
-            ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+            ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
         }
         else return ESYN;
     }
@@ -1606,7 +1618,7 @@ tError argsNext()
                 if(error != EOK)
                     return error;
 
-                ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+                ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
             }
             else
             {
@@ -1631,7 +1643,7 @@ tError argsNext()
                 tBTSUzolPtr tmpCil = cilovaAdresa;
                 cilovaAdresa = TSreadSymbol(nazev);
                 error = litExpr();
-                ta_Insert(&ta, I_WRITE, cilovaAdresa,NULL, NULL);
+                ta_Insert(&ta, I_PRINT, cilovaAdresa,NULL, NULL);
                 if(error != EOK)
                     return error;
 
@@ -1663,7 +1675,7 @@ tError argsNext()
                 {
                     pole_argumentu[0]=(tBTSUzolPtr*) advRealloc( pole_argumentu, sizeof(tBTSUzolPtr)*(*cislo_argumentu+3));
                 }
-                pole_argumentu[(*cislo_argumentu)]=tmpNode;
+                pole_argumentu[(*cislo_argumentu)]= tmpNode;
                 (*cislo_argumentu)++;
             }
             else
@@ -1683,7 +1695,7 @@ tError argsNext()
             if(error != EOK)
                 return error;
 
-            ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+            ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
         }
         else //jinak se jedna o argumenty funkci, ktere nejsou vyrazy
         {
@@ -1725,7 +1737,7 @@ tError argsNext()
             if(error != EOK)
                 return error;
 
-            ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+            ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
         }
         else //jinak se jedna o argumenty funkci, ktere nejsou vyrazy
         {
@@ -1767,7 +1779,7 @@ tError argsNext()
             if(error != EOK)
                 return error;
 
-            ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+            ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
         }
         else //jinak se jedna o argumenty funkci, ktere nejsou vyrazy
         {
@@ -1809,7 +1821,7 @@ tError argsNext()
             if(error != EOK)
                 return error;
 
-            ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+            ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
         }
         else //jinak se jedna o argumenty funkci, ktere nejsou vyrazy
         {
@@ -1853,7 +1865,7 @@ tError argsNext()
                 if(error != EOK)
                     return error;
 
-                ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+                ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
             }
             else //jinak se jedna o argumenty funkci, ktere nejsou vyrazy
             {
@@ -1941,7 +1953,7 @@ tError argsNext()
             if(error != EOK)
                 return error;
 
-            ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+            ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
         }
         else //jinak se jedna o argumenty funkci, ktere nejsou vyrazy
         {
@@ -1992,7 +2004,7 @@ tError argsNext()
             if(error != EOK)
                 return error;
 
-            ta_Insert(&ta, I_WRITE, TSreadSymbol(neterm.data.nazov),NULL, NULL);
+            ta_Insert(&ta, I_PRINT, TSreadSymbol(neterm.data.nazov),NULL, NULL);
         }
         else return ESYN;
     }
@@ -2041,7 +2053,24 @@ tError params()// pocet parametru funkce
         functionNode->data.nextNode= TSreadSymbol(nazev);
         functionNode = TSreadSymbol(nazev);
         functionNode->data.nextNode = NULL;
-
+        getToken();
+        if (token.stav != KLIC_SLOVO)
+        {
+            return ESYN;
+        }
+        if ((strcmp(token.data, "as")))
+        {
+            return ESYN;
+        }
+        getToken();
+        if (token.stav != KLIC_SLOVO)
+        {
+            return ESYN;
+        }
+        if ((strcmp(token.data, "integer")) && (strcmp(token.data, "double")) && (strcmp(token.data, "string")))
+        {
+            return ESYN;
+        }
         error = paramsNext(); //<params_next>
         if(error != EOK)
             return error;
@@ -2091,6 +2120,24 @@ tError paramsNext()
         functionNode->data.nextNode = TSreadSymbol(nazev);
         functionNode = TSreadSymbol(nazev);
         functionNode->data.nextNode = NULL;
+        getToken();
+        if (token.stav != KLIC_SLOVO)
+        {
+            return ESYN;
+        }
+        if ((strcmp(token.data, "as")))
+        {
+            return ESYN;
+        }
+        getToken();
+        if (token.stav != KLIC_SLOVO)
+        {
+            return ESYN;
+        }
+        if ((strcmp(token.data, "integer")) && (strcmp(token.data, "double")) && (strcmp(token.data, "string")))
+        {
+            return ESYN;
+        }
 
         error = paramsNext(); //zavolej se zase
     }

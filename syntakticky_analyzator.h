@@ -3,8 +3,8 @@
 
 
 
-#include "funkcie.h"
-#include "lexikalny_analyzator.h"
+#include "funkce.h"
+#include "lexikalni_analyzator.h"
 #include "ial.h"
 #include "vyrazy.h"
 #include "tagenerator.h"

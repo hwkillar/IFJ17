@@ -4,8 +4,8 @@
  * Hlavickove soubory
  */
 #include "ial.h"
-#include "lexikalny_analyzator.h"
-#include "funkcie.h"
+#include "lexikalni_analyzator.h"
+#include "funkce.h"
 #include "syntakticky_analyzator.h"
 #include "tagenerator.h"
 #include <stdlib.h>
@@ -28,26 +28,28 @@ typedef enum
 
 typedef enum
 {
-    PLUS,		//0 +
-    MINUS,	//1 -
-    KRAT,		//2 *
-    DELENO,	//3 /
-    MOCNINA,	//4 ^
-    ROVNITKO,	//5 ==
-    NEROVNITKO,	//6 <>
-    MENSIROVNO,	//7 <=
-    VETSIROVNO,	//8 >=
-    VICE,		//9 >
-    MENE,		//10 <
-    LZAVORKA,	//11 (
-    PZAVORKA,	//12 )
-    ID,		//13 promenna a konstanta
-    FCE,		//14 volani funkce
-    CARKA,	//15 ,
-    KDOLAR,	//16 $ konec vyrazu
-    MENSITKO,	//17 oznaceni < na zasobniku
-    NETERM,	//18 neterminalni znak napr. E->
-    CHYBA		//19 jiny token do vyrazu nepripoustime
+    ADD,		//0 +
+    SUB,	//1 -
+    TIMES,		//2 *
+    DELENO_D,	//3 /
+    DELENO_C,   //4 \ A
+    MOCNINA,	//5 ^
+    ROVNITKO,	//6 ==
+    NEROVNITKO,	//7 <>
+    MENSIROVNO,	//8 <=
+    VETSIROVNO,	//9 >=
+    VICE,		//10 >
+    MENE,		//11 <
+    LZAVORKA,	//12 (
+    PZAVORKA,	//13 )
+    ID,		//14 promenna a konstanta
+    FCE,		//15 volani funkce
+    CAR,	//15 ,
+    KDOLAR,	//17 $ konec vyrazu
+    MENSITKO,	//18 oznaceni < na zasobniku
+    NETERM,	//19 neterminalni znak napr. E->
+    CHYB,		//20 jiny token do vyrazu nepripoustime
+    KONKAT,	//21 ..
 } tIndexy;
 
 /**
