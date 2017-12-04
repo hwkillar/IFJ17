@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#define MAX_POLE 100
 
 
 void find_labels(TA_Item **ta_table, int **jump_array)// hledani navesti kam se ma skocit
@@ -836,6 +837,8 @@ void instrukce(TA_Item **ta_table, tBTSUzolPtr root)
                 if (op1 == NULL)
                 {
                     id = 0.0;
+                   result->data.value.d = id;
+                   result->data.typ = tDouble;
                     break;
                 }
                 id = scanf("%lf",&(result->data.value.d));
@@ -847,10 +850,12 @@ void instrukce(TA_Item **ta_table, tBTSUzolPtr root)
                 int id;
                 if (op1 == NULL)
                 {
-                    id = 0.0;
+                    id = 0;
+                   result->data.value.i = id;
+                   result->data.typ = tInt;
                     break;
                 }
-                id = scanf("%d",&(result->data.value.d));
+                id = scanf("%d",&(result->data.value.i));
                 result->data.typ = tInt;
                 break;
             }
@@ -868,7 +873,7 @@ void instrukce(TA_Item **ta_table, tBTSUzolPtr root)
 
                 int praz = 0;
                 int znak = 0;
-                char str[100];
+                char str[MAX_POLE];
                 int i = 0;
                 while (1)
                {
