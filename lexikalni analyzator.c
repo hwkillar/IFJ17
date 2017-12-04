@@ -1,4 +1,4 @@
-typedef enum
+/*typedef enum
 {
     START,
     KLIC_SLOVO,
@@ -48,7 +48,7 @@ typedef struct
 
 
 extern tToken token;
-
+*/
 
 tToken getToken(void);
 
@@ -537,7 +537,7 @@ while (pokracuj == 0)
             break;
         }*/
 
-
+    }
         if (error)
             break;
 
@@ -549,7 +549,7 @@ while (pokracuj == 0)
         else if (isprint(znak))
             sloupec++;
 
-    }
+    
 }
 return token;
 }
