@@ -13,11 +13,11 @@ int sloupec = 1;
 const char *tError_mena[] =
 {
     "",
-    "Chyba v ramci lexikalne analyzy\0",
+    "Chyba v ramci lexikalni analyzy\0",
     "Chyba v ramci syntakticke analyzy\0",
     "Chyba v ramci semanticke analyzy\0",
     "Chyba interpretace\0",
-    "Interna chyba prekladace\0"
+    "Interni chyba prekladace\0"
 };
 
 /**
@@ -30,6 +30,6 @@ void perr(void)
 
 void perrdet()
 {
-    fprintf(stderr, "%s na riadku %3d stlpci %3d\n", tError_mena[error], riadok, stlpec);
+    fprintf(stderr, "%s na radku %3d sloupci %3d\n", tError_mena[error], riadok, stlpec);
 }
 
