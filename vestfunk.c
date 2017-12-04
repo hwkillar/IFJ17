@@ -188,6 +188,10 @@ tBTSUzolPtr Asc(tBTSUzolPtr input, tBTSUzolPtr index)
 }
 tBTSUzolPtr Chr(tBTSUzolPtr input)
 {
+    if(index->data.typ != tInt)   // jestli se jedna opravdu o int, jinak chyba
+    {
+        error = EINT;
+    }
     int number = input->data.value.i;
     char asci;
     if (number < 0 && number > 255)
@@ -214,6 +218,10 @@ tBTSUzolPtr Chr(tBTSUzolPtr input)
 }
 tBTSUzolPtr Length(tBTSUzolPtr input)
 {
+    if(input->data.typ != tString)   // jestli se jedna opravdu o string, jinak chyba
+    {
+        error = EINT;
+    }
     char *instring = input->data.value.s;
     int len = strlen(instring);
     char* str = advMalloc(sizeof(char)*25);
