@@ -10,7 +10,8 @@
 #define SUBSTR 4
 #define FUNC   5
 #define NOVEST 6
-
+int jeInt = 0; 
+int jeDouble = 0;
 
 //inicializace &zasobniku
 void VSinit(tVZasobnik *zasobnik)
@@ -162,6 +163,20 @@ tError fetchIndex(tToken token, tData *sloupec, int *counter)
         break;			//)
 //narazili jsme na číselnou konstantu
     case INTEGER:
+        sloupec->p = ID;				//nastavime pseudoznak zasobniku
+        sloupec->data.varFc = false;
+        sloupec->data.typ = tInt; //inicializace hodnot pro vlozeni do TS
+        sloupec->data.value.d = atoi(token.data);
+        char *nazev = advMalloc(sizeof(char)*25);	//generovani klice pro TS
+        sprintf(nazev,"@prom_%u",nameID++);
+        sloupec->data.nazov = nazev;
+        if((TSreadSymbol(nazev)) != NULL)  //pokud uz jmeno bylo v tabulce
+        {
+            return ESEM;
+        }
+        TSvlozSymbol(sloupec->data);
+      jeInt = 1;
+        break;   
     case DOUBLE:
     case EXP:
         sloupec->p = ID;				//nastavime pseudoznak zasobniku
@@ -176,6 +191,7 @@ tError fetchIndex(tToken token, tData *sloupec, int *counter)
             return ESEM;
         }
         TSvlozSymbol(sloupec->data);
+        jeDouble = 1;
         break;
         //string
     case RETEZEC:
@@ -432,12 +448,24 @@ tError redukce(tVZasobnik *zasobnik, tVZasobnik *zasobnik2 )
                         (perator == I_SUB)  ||
                         (perator == I_MUL)  ||
                         (perator == I_DIVD) ||
-                        (perator == I_DIVC) ||
-                        (perator == I_POW))
+                        (perator == I_DIVC))
                 {
                     //pokud nemame konkatenaci
-                    if(konkat != 1)
+                    if((jeInt == 1) && (jeDouble == 0))
                     {
+                        neterm.data.typ = tInt;  //vysledny neterminal bude double
+                        neterm.p = NETERM;
+                        char *aritm = advMalloc(sizeof(char)*25);
+                        sprintf(aritm,"@prom_%u",nameID++);
+                        neterm.data.nazov = aritm;
+                        VSpush(zasobnik, neterm); //a vlozime E
+                        TSvlozSymbol(neterm.data);
+                        ta_Insert(&ta, perator, TSreadSymbol(pom2.data.nazov),TSreadSymbol(pom4.data.nazov), TSreadSymbol(neterm.data.nazov));
+                        jeInt = 0;
+                        return EOK;
+                    }
+                 else
+                 {
                         neterm.data.typ = tDouble;  //vysledny neterminal bude double
                         neterm.p = NETERM;
                         char *aritm = advMalloc(sizeof(char)*25);
@@ -446,20 +474,10 @@ tError redukce(tVZasobnik *zasobnik, tVZasobnik *zasobnik2 )
                         VSpush(zasobnik, neterm); //a vlozime E
                         TSvlozSymbol(neterm.data);
                         ta_Insert(&ta, perator, TSreadSymbol(pom2.data.nazov),TSreadSymbol(pom4.data.nazov), TSreadSymbol(neterm.data.nazov));
+                        jeDouble = 0;
+                        jeInt = 0;      
                         return EOK;
-                    }
-                    else  	//byla konkatenace
-                    {
-                        neterm.data.typ = tString;  //vysledny neterminal bude double
-                        neterm.p = NETERM;
-                        char *konk = advMalloc(sizeof(char)*25);
-                        sprintf(konk,"@prom_%u",nameID++);
-                        neterm.data.nazov = konk;
-                        VSpush(zasobnik, neterm); //a vlozime E
-                        TSvlozSymbol(neterm.data);
-                        ta_Insert(&ta, perator, TSreadSymbol(pom2.data.nazov),TSreadSymbol(pom4.data.nazov), TSreadSymbol(neterm.data.nazov));
-                        return EOK;
-                    }
+                 }
                 }
                 //semant. kontrola porovnani
                 else if ((perator == I_EQUAL) ||
